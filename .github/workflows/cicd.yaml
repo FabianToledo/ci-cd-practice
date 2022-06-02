@@ -72,11 +72,11 @@ jobs:
         run: dotnet test -c Release --no-build
 
       - name: Publish Release
-        run: dotnet publish -c Release -o './app'
+        run: dotnet publish ./AnimalCountingDatabase -c Release -o ./out
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_SECRET }}
-          package: './app'
+          package: ./out
