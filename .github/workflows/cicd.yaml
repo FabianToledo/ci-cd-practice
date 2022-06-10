@@ -62,21 +62,31 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      # We can download a container and spin it up in the middle of the ci/cd chain as a step
+      - name: Start SQL server
+        run: docker run -d -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=P4ss#w0rd" -e "MSSQL_PID=Express" -p 1433:1433 mcr.microsoft.com/mssql/server:2019-latest
+
+      - name: Sleep for 5 seconds to wait for SQL server to start.
+        run: sleep 5s
+        shell: bash
+
       - name: Restore dependencies
         run: dotnet restore
       
-      - name: Build Release
+      - name: Build Release App
         run: dotnet build -c Release --no-restore
 
       - name: Run automated tests
+        env:
+          ConnectionStrings__DefaultConnection: Server=localhost,1433;Database=CiCdDemoTest;User=sa;Password=P4ss#w0rd
         run: dotnet test -c Release --no-build
 
       - name: Publish Release
         run: dotnet publish ./AnimalCountingDatabase -c Release -o ./out
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_SECRET }}
-          package: ./out
+      # - name: Deploy to Azure Web App
+      #   uses: azure/webapps-deploy@v2
+      #   with:
+      #     app-name: ${{ env.AZURE_WEBAPP_NAME }}
+      #     publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_SECRET }}
+      #     package: ./out
